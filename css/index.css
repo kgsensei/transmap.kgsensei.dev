@@ -55,3 +55,23 @@ body {
 	text-align: center;
 	transform: translate(0%, -50%);
 }
+
+@media only screen and (max-device-width: 915px) {
+	#message {
+		width: calc(100% - 50px);
+	}
+
+	#mapContainer {
+		position: absolute;
+		left: 0%;
+		width: 100%;
+		height: 50%;
+	}
+
+	#infoContainer {
+		position: absolute;
+		top: 50%;
+		width: 100%;
+		height: 50%;
+	}	
+}
