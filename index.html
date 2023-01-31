@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html lang="en">
+	<head>
+		<meta charset="utf8">
+
+		<title>Transgender Safety Map</title>
+
+		<meta name="description" content="A map showing the regions in the world friendly to transgender people.">
+        <meta name="keywords" content="kgsensei, trans, safety, map, world, transgender, globe, rating, rights">
+		<meta name="viewport" content="width=device-width, initial-scale=1">
+        <meta name="author" content="kgsensei">
+		<meta name="url" content="https://transmap.kgsensei.dev">
+		<meta name="copyright" content="kgsensei">
+
+		<meta name="og:url" content="https://transmap.kgsensei.dev">
+		<meta name="og:title" content="Trans Safety Map">
+		<meta name="og:image" content="https://transmap.kgsensei.dev/img/preview.png">
+		<meta name="og:image:width" content="1200">
+		<meta name="og:image:height" content="600">
+		<meta name="og:site_name" content="transmap.kgsensei.dev">
+		<meta name="og:description" content="A map showing the regions in the world friendly to transgender people.">
+
+		<meta name="twitter:card" content="summary_large_image">
+		<meta name="robots" content="index, follow">
+		<meta name="theme-color" content="#F7A8B8">
+
+		<link rel="icon" href="./img/favicon.png">
+		<script src="https://kgsensei.dev/js/ka.js"></script>
+
+		<link rel="stylesheet" href="./css/vmap.min.css">
+		<link rel="stylesheet" href="./css/index.css">
+
+		<script src="./js/jquery.js"></script>
+		<script src="./js/vmap.min.js"></script>
+		<script src="./js/vmap.world.js"></script>
+	</head>
+	<body>
+		<div id="infoContainer">
+			<h1>Trans Safety Map</h1>
+			<hr>
+			<h2 id="info_name">Click on a Region</h2>
+			<div class="info_container">
+				Region Code: <span id="info_code">---</span>
+				<br>
+				Rating: <span id="info_rating">---</span>
+				<br>
+				Reports: <span id="info_reports">---</span>
+				<br>
+				Description: <span id="info_desc">---</span>
+			</div>
+			<hr>
+			<h3>Rate this Place</h3>
+			<div id="ratingContainer">
+				<div class="ratingBtn" onclick="ratePlace(0)" style="background-color:#FF0000;"></div>
+				<div class="ratingBtn" onclick="ratePlace(1)" style="background-color:#BF2121;"></div>
+				<div class="ratingBtn" onclick="ratePlace(2)" style="background-color:#B73D3D;"></div>
+				<div class="ratingBtn" onclick="ratePlace(3)" style="background-color:#773A3A;"></div>
+				<div class="ratingBtn" onclick="ratePlace(4)" style="background-color:#503131;"></div>
+				<div class="ratingBtn" onclick="ratePlace(5)" style="background-color:#315032;"></div>
+				<div class="ratingBtn" onclick="ratePlace(6)" style="background-color:#3E8C3F;"></div>
+				<div class="ratingBtn" onclick="ratePlace(7)" style="background-color:#2DAF2E;"></div>
+				<div class="ratingBtn" onclick="ratePlace(8)" style="background-color:#00FF02;"></div>
+			</div>
+		</div>
+		<div id="mapContainer"></div>
+		<div id="message">
+			<div class="centerText" id="msgContainer"></div>
+		</div>
+		<script>
+			var currentlySelected = null
+			var votedRegions = []
+			const sessionToken = randint(100000, 999999)
+
+			fetch("https://rainydais.com/api/getAllTransData_i.php")
+			.then((r) => {return r.text()})
+			.then((d) => {
+				var d = JSON.parse(`{${d.slice(0, -1)}}`)
+				var c = {}
+				Object.keys(d).map((item, i) => {
+					var l = Math.round(d[item][0])
+					if(d[item][1] == 0) {
+						var l = 0
+						d[item][2] = "No Data..."
+					} else {
+						switch(l) {
+						case 0:
+							d[item][2] = "If you go here you will die."
+							break
+						case 1:
+							d[item][2] = "Not safe at all."
+							break
+						case 2:
+							d[item][2] = "Not very safe."
+							break
+						case 3:
+							d[item][2] = "Not safe."
+							break
+						case 4:
+							d[item][2] = "Kinda mediocre."
+							break
+						case 5:
+							d[item][2] = "Slightly safe."
+							break
+						case 6:
+							d[item][2] = "Fairly safe."
+							break
+						case 7:
+							d[item][2] = "Rather safe!"
+							break
+						case 8:
+							d[item][2] = "Probably can't get safer!"
+							break
+						}
+					}
+					c[item] = l
+				})
+				buildMap(c, d)
+			})
+
+			function buildMap(c, d) {
+				$('#mapContainer').css('height', window.innerHeight)
+				$('#mapContainer').vectorMap({
+					map: 'world_en',
+					values: c,
+					enableZoom: false,
+					scaleColors: ['#FF0000', '#BF2121', '#B73D3D', '#773A3A', '#503131', '#315032', '#3E8C3F', '#2DAF2E', '#00FF02'],
+					selectedColor: '',
+					backgroundColor: 'var(--bg)',
+					normalizeFunction: 'linear',
+					onRegionClick: function(element, code, region) {
+						currentlySelected = code
+						$("#info_name").text(region)
+						$("#info_code").text(code.toUpperCase())
+						$("#info_reports").text(d[code][1])
+						$("#info_rating").text(c[code])
+						$("#info_desc").text(d[code][2])
+					}
+				})
+			}
+
+			function randint(min, max) {
+				return Math.floor(Math.random() * (max - min + 1)) + min;
+			}
+
+			function ratePlace(r) {
+				if(currentlySelected != null) {
+					if(votedRegions.indexOf(currentlySelected) == -1) {
+						votedRegions.push(currentlySelected)
+						fetch(`https://rainydais.com/api/voteOnTransPlace_i.php?l=${currentlySelected}&r=${r}&cache=${sessionToken}`)
+						.then((r) => {return r.text()})
+						.then((d) => {
+							if(d == "Success") {
+								message("Vote Counted")
+							} else {
+								message("Network Error")
+							}
+						})
+					} else {
+						message("Wait to Vote Here Again")
+					}
+				} else {
+					message("Select a Region")
+				}
+			}
+
+			function message(m) {
+				$('#msgContainer').html(m)
+				$('#message').fadeIn(225)
+				$('#message').delay(1000).fadeOut(225)
+			}
+		</script>
+	</body>
+</html>
